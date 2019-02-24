@@ -5,11 +5,14 @@ import '../styles/application.scss';
 
 class IndexPage extends React.Component {
 
-    constructor(props) {
-        super(props);
+    constructor() {
+        super();
         this.state = {
-            redditResults: null
+            redditResults: null,
+            searchValue: '',
+            filteredResult:null
         };
+        this.modifySearch = this.modifySearch.bind(this);
     }
 
     /**
@@ -25,7 +28,8 @@ class IndexPage extends React.Component {
     componentDidMount() {
         const component = this;
         axios.get('https://www.reddit.com/r/science.json').then(function(response) {
-            const redditResults = response.data.data.children.map(node => {
+            const redditResults = response.data.data.children
+            .map(node => {
                 const data = node.data;
                 return {
                     url: `https://www.reddit.com${data.permalink}`,
@@ -39,16 +43,35 @@ class IndexPage extends React.Component {
         });
     }
 
+    modifySearch(e){
+        const value = e.target.value
+        this.setState({
+          searchValue: value
+        })
+    }
+
     render() {
-        const { redditResults } = this.state;
+        var data = null;
+        if((this.state.redditResults===null) && (this.state.searchValue === '')){
+            data = null; 
+        }else if(this.state.searchValue !== null){
+            data = this.state.redditResults.filter((item) => {
+                return item.title.toLowerCase().indexOf(this.state.searchValue.toLowerCase()) !== -1;
+            });
+        }else{
+            data = this.state.redditResults;
+        }
         return (
             <section>
-                <h4>Search</h4>
-                <input type="text" name="search" id="search" />
-                {redditResults ? (
-                    <ul>
-                        {redditResults.map(result => (
-                            <li key={result.thumbnail}>
+                <div className="searchBox">
+                    <h4>Search</h4>
+                    <input type="text" name="search" id="search" onKeyUp={this.modifySearch} />
+                </div>
+
+                {data ? (
+                    <ul className="results">
+                        {data.map(result => (
+                            <li className="result-item" key={result.thumbnail}>
                                 <a href={result.url}>
                                     <strong>{result.title}</strong>
                                     <img src={result.thumbnail} alt={result.title}/>
@@ -56,7 +79,7 @@ class IndexPage extends React.Component {
                             </li>
                         ))}
                     </ul>
-                ) : ''}
+                ) : <p>No search results</p>}
             </section>
         );
     }
